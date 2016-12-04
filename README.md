@@ -1,2 +1,2 @@
-# CITools
-持续集成工具
+# CIScripts
+持续集成脚本
