@@ -12,6 +12,7 @@ class Pom:
         self.artifactId = artifactId
         self.groupId = groupId
         self.version = version
+        self.modules = []
         self.parent = None
         self.dependencies = []
 
@@ -74,13 +75,20 @@ class Pom:
         if root.find(Pom.ns('version')) is not None:
             pom.version = root.find(Pom.ns('version')).text
 
+        # modules = root.find(Pom.ns('modules'))
+        # if modules is not None:
+        #     for module in modules
         # 采集parent信息
         parent = root.find(Pom.ns('parent'))
         if parent is not None:
             pom.parent = Pom(parent.find(Pom.ns('artifactId')).text)
             pom.groupId = pom.parent.groupId = parent.find(Pom.ns('groupId')).text
-        else:
-            pom.groupId = root.find(Pom.ns('groupId')).text
+        # else:
+            # pom.groupId = root.find(Pom.ns('groupId')).text
+            
+        groupId = root.find(Pom.ns('groupId'))
+        if groupId is not None:
+            pom.groupId = groupId.text
 
         # 采集依赖信息
         dependencies = root.find(Pom.ns('dependencies'))
