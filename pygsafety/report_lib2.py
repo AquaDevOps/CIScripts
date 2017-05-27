@@ -105,10 +105,10 @@ cookie = resp['set-cookie']
 # )
 
 # 日报浏览
-# resp, content = http.request(
-#   base_host + '/ams/' + 'ams_weekly/WeeklyweeklyBrowse.do?flag=true',
-#   headers={ 'Cookie': cookie }
-# )
+resp, content = http.request(
+  base_host + '/ams/' + 'ams_weekly/WeeklyweeklyBrowse.do?flag=true',
+  headers={ 'Cookie': cookie }
+)
 
 # open('output.txt', 'w+').write(content)
 
@@ -138,7 +138,6 @@ def getHistory(begin, end):
     )
     print(resp)
 
-    # print(content)
     historyParser = WorklogParamParser()
     historyParser.feed(content)
     params = historyParser.get_params()
@@ -149,14 +148,11 @@ def getHistory(begin, end):
         html = etree.HTML(content)
 
         script = html.xpath("//script[@type='text/javascript' and not(@src)]")[0].text
-        # print(script[0].text)
 
         detailParser = WorklogDetailParse()
         detailParser.feed(content)
         data = detailParser.get_data()
 
-        # print(data)
-        # print(data['script'])
         start_time = re.search(r'var sst = \'(?P<time>[-\w: ,]+)\'', script).group('time').split(',')[:-1]
         end_time = re.search(r'var set = \'(?P<time>[-\w: ,]+)\'', script).group('time').split(',')[:-1]
 
@@ -225,12 +221,12 @@ def logWorkLog(content, starttime, endtime, overstarttime, overendtime):
 
 getHistory(begin='2017-05-15', end='2017-05-20')
 
-# logWorkLog(
-#   content='''
-# 整理协同开发环境文档
-# ''',
-#   starttime =     '2017-05-20 09:00',
-#   endtime =       '2017-05-20 18:00',
-#   overstarttime = '2017-05-20 18:00',
-#   overendtime =   '2017-05-20 20:20',
-# )
+logWorkLog(
+  content='''
+整理协同开发环境文档
+''',
+  starttime =     '2017-05-16 09:00',
+  endtime =       '2017-05-16 18:00',
+  overstarttime = '2017-05-16 18:00',
+  overendtime =   '2017-05-16 20:20',
+)
