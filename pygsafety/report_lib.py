@@ -56,7 +56,7 @@ class Reporter:
                 'Cookie': self.cookie,
             }
         )
-        # print resp
+        # print content
 
         data = {'reports':[]}
 
