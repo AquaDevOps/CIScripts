@@ -130,48 +130,57 @@ class Reporter:
             report['project'] = re.search(r'<[^<>]+>(?P<project>([^<>])+)<[^<>]+>', tag_project).group('project').strip().replace('&#13;', '')
 
             data['reports'].append(report)
+
         return data
 
     def printHistory(self, date_start, date_end = None):
         data = self.getHistory(date_start, date_end)
+        
+        data['reports'] = sorted(data['reports'], key=lambda x: x['days'][0])
 
         for report in data['reports']:
-            print("--------------------------------------------------")
-            print("项目 : %s " % report['project'])
-            print(report['param'])
-            print("--------------------------------------------------")
+            print('=' * 128)
+            print('%36s : %s ' % (report['param'], report['project']))
+            print('-' * 128)
 
-            for day in report['days']:
+            contents = report['content'].strip().splitlines()
+            days = []
+
+            for day in sorted(report['days'], key=lambda x: x):
                 workday = report['calendar'][day]
                 if workday.has_key('start'):
                     work = "%5s-%5s" % (workday['start'], workday['end'])
                 else:
-                    work = "-----------"
+                    work = ' ' * 11
                 if workday.has_key('o_start'):
                     over = "%5s-%5s" % (workday['o_start'], workday['o_end'])
                 else:
-                    over = "-----------"
-                print("%s %s %s" % (day, work, over))
-            
-            print("--------------------------------------------------")
-            print(report['content'])
-            print("--------------------------------------------------")
+                    over = ' ' * 11
+                days.append("%s %s %s" % (day, work, over))
 
-    def logWorklog(self, content, time_start='', time_end='', time_o_start='', time_o_end=''):
+            count = max(len(contents), len(days))
+            contents.extend([''] * (count - len(contents)))
+            days.extend([''] * (count - len(days)))
+
+            for i in range(count):
+                print('%36s : %s ' % (days[i], contents[i]))
+            print('')
+
+    def logWorklog(self, content, date, time_start='', time_end='', time_o_start='', time_o_end=''):
         data = urlencode({
             'projectid':'2c90827052e7b61401535a546c0e0609',
             'formid':'frmCreate',
             'projectname':'辰安公共安全云平台V2.0.0',
             'weeklycontent':content.strip(),
-            'starttime':time_start,
-            'endtime':  time_end,
-            'startstr': time_start,
-            'endstr':   time_end,
+            'starttime':time_start and '%s %s' % (date, time_start),
+            'endtime':  time_end and '%s %s' % (date, time_end),
+            'startstr': time_start and '%s %s' % (date, time_start),
+            'endstr':   time_end and '%s %s' % (date, time_end),
             'iscomplete':'100',
-            'overtimestart':time_o_start,
-            'overtimeend':  time_o_end,
-            'overstartstr': time_o_start,
-            'overendstr':   time_o_end,
+            'overtimestart':time_o_start and '%s %s' % (date, time_o_start),
+            'overtimeend':  time_o_end and '%s %s' % (date, time_o_end),
+            'overstartstr': time_o_start and '%s %s' % (date, time_o_start),
+            'overendstr':   time_o_end and '%s %s' % (date, time_o_end),
             'btnSave':'clicked',
             'otherprojectid': '',
             'plancontent': '',
