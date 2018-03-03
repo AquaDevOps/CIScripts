@@ -1,9 +1,13 @@
+from datetime import datetime
+from time import time
 from distutils.core import setup
 from setuptools import setup, find_packages
 
 setup(
     name='aqua-devops',
-    version='0.0.1-20180103',
+    version='{version}.{timestamp}'.format(
+        version='0.0.1', timestamp=datetime.fromtimestamp(time()).strftime('%Y%m%d.%H%M%S')
+    ),
     description='lib for devops',
     packages=find_packages(),
     license='Apache 2.0',
