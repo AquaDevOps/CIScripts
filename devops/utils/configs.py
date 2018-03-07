@@ -1,6 +1,8 @@
 import os
-from ConfigParser import ConfigParser
 
+from configparser import ConfigParser
+
+from backports import configparser
 
 class ConfigWrapper(object):
     def __init__(self):

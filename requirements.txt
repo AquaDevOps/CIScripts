@@ -1,0 +1,4 @@
+ConfigParser == 3.5.0
+PyMySQL == 0.8.0
+pymssql == 2.1.3
+ldap == 1.0.2
