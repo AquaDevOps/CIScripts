@@ -2,8 +2,6 @@ import os
 
 from configparser import ConfigParser
 
-from backports import configparser
-
 class ConfigWrapper(object):
     def __init__(self):
         self.config = ConfigParser()

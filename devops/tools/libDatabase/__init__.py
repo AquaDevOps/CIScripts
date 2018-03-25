@@ -1,2 +1,5 @@
 from . import libMySQL as mysql
-from . import libSQLServer as sqlserver
+try:
+    from . import libSQLServer as sqlserver
+except ImportError as e:
+    print('sqlserver module not available')

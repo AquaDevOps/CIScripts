@@ -1,126 +1,99 @@
-import ldap
-from ldap import modlist
-
+import ldap3
+from ldap3.utils.dn import safe_rdn
+from ldap3.utils.log import set_library_log_activation_level
+from ldap3.abstract.entry import Entry
+import re
+import logging
+logging.basicConfig(filename='ldap_client.log', level=logging.DEBUG)
+set_library_log_activation_level(logging.DEBUG)
 
 class LDAP:
-    def __init__(self, url, username, password):
-        self.session = ldap.initialize(url)
-        self.session.set_option(ldap.OPT_REFERRALS, 0)
-        self.session.protocol_version = ldap.VERSION3
-        self.session.simple_bind_s(username.encode('utf-8'), password.encode('utf-8'))
+    REGEX_RDN = re.compile('(?P<attr>\S+)=(?P<val>\S+)')
+    (BASE, LEVEL, SUBTREE) = (ldap3.BASE, ldap3.LEVEL, ldap3.SUBTREE)
+    (MODIFY_ADD, MODIFY_DELETE, MODITY_REPLACE) = (ldap3.MODIFY_ADD, ldap3.MODIFY_DELETE, ldap3.MODIFY_REPLACE)
 
+    def __init__(self, url, username, password):
+        self.connection = ldap3.Connection(server=url, user=username, password=password)
         self.schemas = {}
 
-    def add(self, dn, entry):
-        return self.session.add_s(dn, ldap.modlist.addModlist(entry))
+    def bind(self):
+        self.connection.bind()
 
-    def drop(self):
-        self.session.unbind_s()
+    def unbind(self):
+        self.connection.unbind()
 
-    def modify(self, basedn, oldvalue, newvalue):
-        self.session.modify_s(basedn, modlist.modifyModlist(oldvalue, newvalue))
+    def add(self, dn, object_class, attributes={}):
+        attributes = {
+            key: value for key, value in attributes.items() if (
+                key != 'objectClass' and (not isinstance(value, (set, list, tuple)) or len(value) > 0)
+            )
+        }
+        print(attributes)
+        result = self.connection.add(dn=dn, object_class=object_class, attributes=attributes)
+        print(result)
+        print(result)
 
-    def rename(self, dn, newrdn, newsuperior=None, delold=True):
-        self.session.rename(dn=dn, newrdn=newrdn, newsuperior=newsuperior, delold=delold)
+    def delete(self, dn):
+        return self.connection.delete(dn)
 
-    def search(self, scope=ldap.SCOPE_SUBTREE, basedn='dc=gsafety,dc=com', filter='(&(objectClass=*))', attrlist=[]):
-        try:
-            return self.session.search_s(basedn, scope, filterstr=filter, attrlist=attrlist)
-        except ldap.NO_SUCH_OBJECT:
-            return []
+    # changes = {
+    #   attr: [
+    #     (MODIFY_ADD / MODIFY_DELETE / MODIFY_REPLACE, [contents]),
+    #   ]
+    # }
+    def modify(self, dn, changes={}):
+        self.connection.modify(dn, changes=changes)
+
+    def modify_dn(self, dn, relatvie_dn=None, delete_old_dn=True, new_superior=None):
+        if relatvie_dn is None:
+            relatvie_dn = safe_rdn(dn)
+        self.connection.modify_dn(dn, relative_dn=relatvie_dn, delete_old_dn=delete_old_dn, new_superior=new_superior)
+
+    def search(self, base='dc=gsafety,dc=com', scope=SUBTREE, filter='(&(objectClass=*))', attributes=['*']):
+        self.connection.search(search_base=base, search_scope=scope, search_filter=filter, attributes=attributes)
+        return [{'dn': entry.entry_dn, 'attr': entry.entry_attributes_as_dict} for entry in self.connection.entries]
 
     def exist(self, dn):
-        return len(self.session.search(scope=ldap.SCOPE_BASE, basedn=dn)) > 0
+        return len(self.search(base=dn, scope=LDAP.BASE)) > 0
 
-
-    def product(self, collect):
-        for node in collect:
-            self.add(node['dn'], node['obj'])
-            self.product(node['children'])
-
-    def collect(self, basedn):
-        nodes = [
-            {
-                'dn': dn,
-                'obj': obj,
-                'children': self.collect(basedn=dn)
-            } for dn, obj in self.search(scope=ldap.SCOPE_ONELEVEL, basedn=basedn)
-        ]
-
-        for node in nodes:
-            cls = '/'.join(node['obj']['objectClass'])
-            self.schemas[cls] = list(set(self.schemas.get(cls, []) + node['obj'].keys()))
-
-        return nodes
-
-    def walk(self, collection):
+    def collect(self, base, include_root=True):
+        collection = self.search(base=base, scope=LDAP.LEVEL)
         for node in collection:
-            for dn, obj in self.walk(node['children']):
-                yield(dn, obj)
-            yield(node['dn'], node['obj'])
+            node['children'] = self.collect(node['dn'], include_root=False)
+        return [
+            dict(base, **{'collection': collection}) for base in self.search(base=base, scope=LDAP.BASE)
+        ] if include_root else collection
 
-    def migrate(self, collection, basedn='', dn_mapping={}, cls_mapping={}, attr_mapping={}):
-        migrated_collection = []
+    def product(self, collection):
         for node in collection:
-            connected_class = '/'.join(set(node['obj']['objectClass']))
-            migrated_dn = dn_mapping.get(connected_class, lambda node, parent: node['dn'])(node, '')
-
-            migrated_node = {
-                'dn': '{dn},{basedn}'.format(dn=migrated_dn, basedn=basedn),
-                'obj': dict(
-                    {
-                        'objectClass': cls_mapping.get(connected_class, node['obj']['objectClass'])
-                    },
-                    **{
-                        # attr: value for attr, value in node['obj'].iteritems() if attr is not 'objectClass'
-                        attr: operator(node, '') for attr, operator in attr_mapping[connected_class].iteritems()
-                    }),
-                'children': self.migrate(
-                    node['children'],
-                    basedn='{dn},{basedn}'.format(dn=migrated_dn, basedn=basedn),
-                    dn_mapping=dn_mapping,
-                    cls_mapping=cls_mapping,
-                    attr_mapping=attr_mapping,
-                )
-            }
-            migrated_collection.append(migrated_node)
-        return migrated_collection
-
-    def refactor2(self, nodes, basedn='', dn_naming={}, dn_mapping={}, cls_mapping={}, attr_mapping={}):
-        dn_naming = {'/'.join(set(dn.split('/'))): mapping for dn, mapping in dn_naming.iteritems()}
-        cls_mapping = {'/'.join(set(cls.split('/'))): mapping for cls, mapping in cls_mapping.iteritems()}
-        migrated = []
-        for node in nodes:
-            dn = '/'.join(set(node['obj']['objectClass']))
-            if dn in dn_naming:
-                node['dn'] = '{dn}={val},{basedn}'.format(
-                    dn=dn_naming[dn][0],
-                    val=dn_mapping.get(dn, {}).get(
-                        node['obj'][dn_naming[dn][1]][0].decode('utf-8'),
-                        node['obj'][dn_naming[dn][1]][0]
-                    ),
-                    basedn=basedn,
-                )
-
-            for attr in node['obj'].keys():
-                if attr in attr_mapping:
-                    for mapping in attr_mapping[attr]:
-                        node['obj'][mapping] = node['obj'][attr]
-                    node['obj'].pop(attr)
-
-            node['obj']['objectClass'] = cls_mapping.get(
-                '/'.join(set(node['obj']['objectClass'])),
-                node['obj']['objectClass']
-            )
-            node['children'] = self.refactor(
-                nodes=node['children'],
-                basedn=node['dn'],
-                dn_naming=dn_naming,
-                dn_mapping=dn_mapping,
-                cls_mapping=cls_mapping,
-                attr_mapping=attr_mapping,
-            )
-
-            migrated.append(node)
-        return migrated
-
+            if not self.exist(node['dn']):
+                self.add(node['dn'], object_class=node['obj']['objectClass'], attributes=node['obj'])
+                self.product(node.get('children', []))
+    #
+    # def product(self, collect):
+    #     for node in collect:
+    #         if not self.exist(node['dn']):
+    #             print(node)
+    #             self.add(node['dn'], {attr: [val.encode('utf-8') for val in vals] for attr, vals in node['obj'].iteritems()})
+    #             self.product(node.get('children', []))
+    #
+    # def collect(self, basedn, include_root=True):
+    #     collection = [
+    #         {
+    #             'dn': dn,
+    #             'obj': obj,
+    #             'children': self.collect(basedn=dn, include_root=False)
+    #         } for dn, obj in self.search(scope=ldap.SCOPE_ONELEVEL, basedn=basedn)
+    #     ]
+    #
+    #     for node in collection:
+    #         cls = '/'.join(node['obj']['objectClass'])
+    #         self.schemas[cls] = list(set(self.schemas.get(cls, []) + node['obj'].keys()))
+    #
+    #     return [
+    #         {
+    #             'dn': dn,
+    #             'obj': obj,
+    #             'children': collection
+    #         } for dn, obj in self.search(scope=ldap.SCOPE_BASE, basedn=basedn)
+    #     ] if include_root else collection

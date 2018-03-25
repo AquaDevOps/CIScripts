@@ -1,6 +1,5 @@
 import pymysql
 
-
 class Connect:
     def __init__(self, host, user, pswd, database, charset='utf8', port=3306):
         self.connection_info = {
