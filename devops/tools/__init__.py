@@ -1,8 +1,8 @@
-from . import atlassian
-from . import builder
-from . import ci
-from . import libDatabase
-from . import libLDAP as ldap
-from . import nginx
-from . import office
-from . import scm
+from . import aqua_atlassian
+from . import aqua_builder
+from . import aqua_ci
+from . import aqua_database
+from . import aqua_ldap as ldap
+from . import aqua_nginx
+from . import aqua_office
+from . import aqua_scm

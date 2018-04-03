@@ -56,6 +56,16 @@ class LDAP:
     def exist(self, dn):
         return len(self.search(base=dn, scope=LDAP.BASE)) > 0
 
+    def load(self, base_dn='dc=gsafety,dc=com', node=None):
+        if node is None and self.exist(base_dn):
+            node = self.search(base=base_dn, scope=LDAP.BASE)[0]
+        if node is None:
+            return None
+
+        return dict(node, **{'children': [
+            self.load(base_dn=child['dn'], node=child) for child in self.search(base=base_dn, scope=LDAP.LEVEL)
+        ]})
+
     def collect(self, base, include_root=True):
         collection = self.search(base=base, scope=LDAP.LEVEL)
         for node in collection:
