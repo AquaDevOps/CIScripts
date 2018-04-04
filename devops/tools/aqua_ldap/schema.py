@@ -1,1 +1,1 @@
-from .structure import Schema
+# from .structure import Schema
