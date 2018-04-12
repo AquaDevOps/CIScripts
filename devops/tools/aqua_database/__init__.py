@@ -1,5 +1,3 @@
-from . import libMySQL as mysql
-try:
-    from . import libSQLServer as sqlserver
-except ImportError as e:
-    print('sqlserver module not available')
+def simple_value(val):
+    return ('"%s"' if isinstance(val, str) else '%s') % val
+
