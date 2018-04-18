@@ -1,4 +1,4 @@
 from devops.utils.config import ConfigWrapper
 
 config = ConfigWrapper()
-print('{username} identified by {password}'.format(username=config.devops.username, password=config.devops.password))
+print('hello {username}'.format(username=config.devops.username))

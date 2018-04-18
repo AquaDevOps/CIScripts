@@ -29,7 +29,10 @@ class ConfigWrapper:
             return self.__getattr__(option)
 
         def get(self, option, default):
-            return self.config.get(self.section, option) if self.config.has_option(self.section, option) else default
+            if self.wrapper.config.has_option(self.section, option):
+                return self.wrapper.config.get(self.section, option)
+            else:
+                return default
 
     def __init__(self, path='data/config.ini'):
         self.config = ConfigParser()
