@@ -14,7 +14,7 @@ class Gitlab:
         self.group = GroupHelper(self)
         self.user = UserHelpder(self)
 
-    def create(self, owner, project_number, names=None, members=None):
+    def create(self, owner, project_number, names=None, template=None, members=None):
         if names is None:
             names = []
         if members is None:

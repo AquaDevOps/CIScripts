@@ -1,4 +1,5 @@
-import ssh
+import paramiko as ssh
+from devops.tools.scm.svn import template
 class svn:
     def __init__(self, svn_home='/home/workspace/repos', host='172.17.38.181', password='intel@123'):
         self.client = ssh.SSHClient()
@@ -8,9 +9,13 @@ class svn:
         self.svn_home = svn_home
         self.svn_repo_name = 'doc'
 
+        self.template = template.catalog
 
 
-    def create_svn(self, project_number, members=None):
+
+    def create(self, owner, project_number, names, template, members=None):
+        if members is None:
+            members = []
         create_command = []
         command1 = 'mkdir {svn_home}/{project_number}'
         comm1 = command1.format(
@@ -30,7 +35,8 @@ class svn:
         comm3 = command3.format(
             svn_home=self.svn_home,
             project_number=project_number,
-            init="{tags,trunk,branches}"
+            init=self.template[template] if self.template.__contains__(template) else "{tags,trunk,branches}"
+            # init="{tags,trunk,branches}"
         )
         create_command.append(comm3)
 
@@ -63,20 +69,20 @@ class svn:
         create_command.append(comm4)
 
         repo_authz = """[groups]
-    qa = {user3}
-    doc_developer = {user3}
+qa = {user3}
+doc_developer = {user3}
 
-    [/tags]
-    @qa = rw
+[/tags]
+@qa = rw
 
-    [doc:/]
-    * = r
+[doc:/]
+* = r
 
-    [doc:/trunk]
-    @doc_developer = rw
+[doc:/*]
+@doc_developer = rw
 
-    [doc:/branches]
-    @doc_developer = rw"""
+[doc:/branches]
+@doc_developer = rw"""
         users = ''
         for user in members:
             users = users + ',' + user
