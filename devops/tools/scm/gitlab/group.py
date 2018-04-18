@@ -9,7 +9,7 @@ class GroupHelper(Helper):
             result = filter(lambda x: full_path == x['full_path'], collection)
             return list(result)
 
-    def create(self, name, path, description=None):
+    def create(self, path, name=None, description=None):
         response = self.request(method='post', path='groups', data={
             'name': name if name is not None else path,
             'path': path,
@@ -18,7 +18,9 @@ class GroupHelper(Helper):
         })
 
         if 201 == response.status_code:
-            return response.json()
+            result = response.json()
+            print('group ({id}) {fullpath} created'.format(id=result['id'], fullpath=result['full_path']))
+            return result
         else:
             print(response.status_code)
             print(response.content)
@@ -40,11 +42,14 @@ class GroupHelper(Helper):
             self.delete_member(userid, groupid)
         except Exception as e:
             pass
-        response = self.request(method='post', path='groups/{id}/members'.format(id=groupid),
-                                data={'user_id': userid, 'access_level': access_level})
+        response = self.request(
+            method='post',
+            path='groups/{id}/members'.format(id=groupid),
+            data={'user_id': userid, 'access_level': access_level})
 
         if 201 == response.status_code:
-            return response.json()
+            result = response.json()
+            return result
         else:
             print(response.status_code)
             print(response.content)

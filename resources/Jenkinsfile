@@ -1,0 +1,3 @@
+node ('linux') {
+    load(ciSharedJenkinsfile())
+}

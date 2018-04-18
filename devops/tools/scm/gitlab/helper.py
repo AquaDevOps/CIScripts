@@ -1,6 +1,16 @@
 import requests
 
 
+GUEST = 10
+REPORTER = 20
+DEVELOPER = 30
+MASTER = 40
+OWNER = 50
+
+ROLE_2_LEVEL = {'guest': 10, 'reporter': 20, 'developer': 30, 'master': 40, 'owner': 50}
+LEVEL_2_ROLE = {level: role for role, level in ROLE_2_LEVEL.items()}
+
+
 class Helper:
     def __init__(self, instance):
         self.instance = instance
@@ -10,8 +20,11 @@ class Helper:
         print(url)
 
         return requests.request(
-            method=method, url=url,
-            headers=dict({'PRIVATE-TOKEN': self.instance.token}, **headers), params=params, data=data
+            method=method.lower(),
+            url=url,
+            headers=dict({'PRIVATE-TOKEN': self.instance.token}, **headers),
+            params=params,
+            data=data
         )
 
     def pager(self, path, headers={}, params={}, data={}, page=1):
@@ -27,3 +40,4 @@ class Helper:
             print(response.status_code)
             print(response.content)
             raise Exception
+

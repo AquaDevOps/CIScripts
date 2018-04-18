@@ -1,4 +1,4 @@
-from .helper import Helper
+from .helper import (Helper, LEVEL_2_ROLE)
 
 
 class ProjectHelper(Helper):
@@ -12,7 +12,9 @@ class ProjectHelper(Helper):
         })
 
         if 201 == response.status_code:
-            return response.json()
+            result = response.json()
+            print('project ({id}) {fullpath} created'.format(id=result['id'], fullpath=result['path_with_namespace']))
+            return result
         else:
             print(response.status_code)
             print(response.content)
@@ -29,7 +31,6 @@ class ProjectHelper(Helper):
             raise Exception
 
 
-    # path_with_namespace = 'HY_GCRJ_2017017/source'
     def list(self, path_with_namespace):
         print(path_with_namespace)
         collection = self.pager('projects?search={keyword}'.format(keyword=path_with_namespace.split('/')[-1]))
@@ -56,7 +57,9 @@ class ProjectHelper(Helper):
                                 data={'user_id': userid, 'access_level': access_level})
 
         if 201 == response.status_code:
-            return response.json()
+            result = response.json()
+            print('added {user} as {role}'.format(user=result['name'], role=LEVEL_2_ROLE[access_level]))
+            return result
         else:
             print(response.status_code)
             print(response.content)

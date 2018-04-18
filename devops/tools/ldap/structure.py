@@ -7,6 +7,7 @@ import logging
 logging.basicConfig(filename='ldap_client.log', level=logging.DEBUG)
 set_library_log_activation_level(logging.DEBUG)
 
+
 class LDAP:
     REGEX_RDN = re.compile('(?P<attr>\S+)=(?P<val>\S+)')
     (BASE, LEVEL, SUBTREE) = (ldap3.BASE, ldap3.LEVEL, ldap3.SUBTREE)

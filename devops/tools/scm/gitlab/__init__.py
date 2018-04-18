@@ -4,10 +4,11 @@ from .user import UserHelpder
 
 
 class Gitlab:
-    def __init__(self, host, token, api='v4'):
-        self.host = host
+
+    def __init__(self, url, token, api='v4'):
+        self.url = url
         self.token = token
-        self.resturl = '{host}/api/{api}'.format(host=host, api=api)
+        self.resturl = '{url}/api/{api}'.format(url=url, api=api)
 
         self.project = ProjectHelper(self)
         self.group = GroupHelper(self)
@@ -19,7 +20,7 @@ class Gitlab:
         if members is None:
             members = []
         self.group.create(path=project_number, name=None)
-        groupid=self.group.list(project_number)[0]['id']
+        groupid = self.group.list(project_number)[0]['id']
 
         ownerid = self.user.list(search={'username': owner})[0]['id']
         self.group.add_member(userid=ownerid, access_level=50, groupid=groupid)

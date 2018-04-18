@@ -12,3 +12,8 @@ class UserHelpder(Helper):
         )
         print('collected : {count}'.format(count=len(collection)))
         return collection
+
+    def userid(self, userid_or_username):
+        return userid_or_username if isinstance(userid_or_username, int) else self.list(
+            search={'username': userid_or_username}
+        )[0]['id']

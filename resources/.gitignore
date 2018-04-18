@@ -1,9 +1,3 @@
-# Common
-data/
-log/
-config.ini
-test*.py
-
 # Eclipse
 .metadata
 bin/
