@@ -2,6 +2,7 @@ from snippets.sample_config import config
 from devops.tools.scm import Gitlab
 from devops.tools.scm.gitlab.helper import (DEVELOPER, MASTER, OWNER)
 
+
 class Project:
     def __init__(self, sn, name):
         self.sn = sn

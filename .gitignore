@@ -47,6 +47,8 @@ buildNumber.properties
 
 # Python
 venv/
+dist/
+*.egg-info/
 __pycache__/
 *.py[cod]
 db.sqlite3
