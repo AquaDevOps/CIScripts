@@ -26,7 +26,7 @@ def get_members(project_number='__GCJC2013029'):
             for m in collect['attr']['member']:
                 data['members'].append(m.split(',')[0][4:])
             result.append(data)
-    result = [{'field': 'src', 'role': ['src_developer'], 'members': ['libo', 'lipengfei']}]
+    # result = [{'field': 'src', 'role': ['src_developer'], 'members': ['libo', 'lipengfei']}]
 #     for g in result:
 #         repo_name = g['field']
 #         repo_group_list = g['role']
