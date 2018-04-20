@@ -1,3 +1,4 @@
+from devops.tools.ldap.get_authz import get_members
 from .project import ProjectHelper
 from .group import GroupHelper
 from .user import UserHelpder
@@ -14,11 +15,13 @@ class Gitlab:
         self.group = GroupHelper(self)
         self.user = UserHelpder(self)
 
-    def create(self, owner, project_number, names=None, template=None, members=None):
-        if names is None:
-            names = []
-        if members is None:
-            members = []
+    def create(self, owner, project_number, template=None):
+        groups = get_members(project_number)
+        names = []
+        members =[]
+        for g in groups:
+            names = g['field']
+            members = g['members']
         self.group.create(path=project_number, name=None)
         groupid = self.group.list(project_number)[0]['id']
 
