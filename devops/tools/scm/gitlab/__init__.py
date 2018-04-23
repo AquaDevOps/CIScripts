@@ -4,6 +4,7 @@ from devops.tools.ldap.get_authz import get_members
 from .project import ProjectHelper
 from .group import GroupHelper
 from .user import UserHelpder
+from .helper import ROLE_2_LEVEL, LEVEL_2_ROLE
 
 
 class Gitlab:
@@ -33,27 +34,39 @@ class Gitlab:
                     self.project.add_member(userid=member, access_level=30, projectid=project)
                 except Exception as e:
                     pass
-        self.add_authz(owner, display_name, project_number, members)
+        self.add_authz(display_name, project_number, members)
 
-    def add_authz(self, owner, display_name, project_number, members=[]):
+    def add_authz(self, display_name, project_number, members=[]):
         # add ldap
         groups = get_members(project_number)
-        names = []
-        members =[]
-        for g in groups:
-            names = g['field']
-            members = g['members']
-
-        groupid = self.group.list(project_number)[0]['id']
-
-        ownerid = self.user.list(search={'username': owner})[0]['id']
-
         name = display_name
         project = self.project.list(project_number+'/'+name)[0]['id']
-        if members:
-            for member in members:
+        for r in groups.keys():
+            for member in groups[r]:
                 member = self.user.list(search={'username': member})[0]['id']
                 try:
-                    self.project.add_member(userid=member, access_level=30, projectid=project)
+                    self.project.add_member(userid=member, access_level=ROLE_2_LEVEL[r], projectid=project)
                 except Exception as e:
                     pass
+
+    def get_auth(self, project_number, display_name):
+        name = display_name
+        project = self.project.list(project_number+'/'+name)[0]['id']
+        members = self.project.get_members(project)
+        field={}
+        for m in members:
+            level = m['access_level']
+            field[LEVEL_2_ROLE[level]]=[]
+        for m in members:
+            level = m['access_level']
+            field[LEVEL_2_ROLE[level]].append(m['username'])
+        return field
+
+    def modify_ldap(self, project_number, display_name):
+        if self.get_auth(project_number=project_number,
+                         display_name=display_name) == get_members(project_number, display_name):
+            return True
+        else:
+            return False
+
+

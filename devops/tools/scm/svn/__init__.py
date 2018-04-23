@@ -1,8 +1,13 @@
+import os
 from builtins import Exception
 
 import paramiko as ssh
 from devops.tools.scm.svn import template
 from devops.tools.ldap.get_authz import get_members
+from configparser import ConfigParser
+
+
+
 class svn:
     def __init__(self, svn_home='/home/workspace/repos', host='172.17.38.181', password='intel@123'):
         self.client = ssh.SSHClient()
@@ -51,7 +56,7 @@ class svn:
 
   AuthType Basic
   AuthName "Repositories of {project_number}"
-  AuthzSVNAccessFile {svn_home}/{project_number}/authz
+  AuthzSVNAccessFile {svn_home}/{project_number}/{display_name}/authz
 
   Satisfy all
   Require valid-user
@@ -63,7 +68,8 @@ class svn:
     """
         repo_conf = repo_conf.format(
             project_number=project_number,
-            svn_home=self.svn_home
+            svn_home=self.svn_home,
+            display_name=display_name
         )
         command4 = "echo '{repo_conf}' >>/etc/httpd/conf.d/subversion.conf"
         comm4 = command4.format(
@@ -72,14 +78,13 @@ class svn:
         create_command.append(comm4)
 
         repo_authz = """[groups]
-qa = {user3}
-doc_developer = {user3}
+developer = {user3}
 
 [{doc}:/]
 * = r
 
 [{doc}:/*]
-@doc_developer = rw"""
+@developer = rw"""
         users = owner
         for user in members:
             users = users + ',' + user
@@ -87,11 +92,12 @@ doc_developer = {user3}
             user3=users,
             doc=display_name
         )
-        command5 = 'echo "{repo_authz}" >>{svn_home}/{project_number}/authz'
+        command5 = 'echo "{repo_authz}" >>{svn_home}/{project_number}/{display_name}/authz'
         comm5 = command5.format(
             project_number=project_number,
             svn_home=self.svn_home,
-            repo_authz=repo_authz
+            repo_authz=repo_authz,
+            display_name=display_name
         )
         create_command.append(comm5)
 
@@ -104,46 +110,84 @@ doc_developer = {user3}
             pass
         self.add_authz(display_name, project_number, members)
 
-
-
     def add_authz(self, display_name, project_number, members=[]):
         # add ldap
 
-        groups = get_members(project_number)
-        for g in groups:
-            if display_name == g['field']:
-                repo_group_list = g['role']
-                repo_groups = '[groups]'
-                for r in g['role']:
-                    repo_groups = repo_groups + """
+        groups = get_members(project_number, display_name)
+        repo_groups = '[groups]'
+        for r in groups.keys():
+            repo_groups = repo_groups + """
 """ + r + "="
-                    for m in g['members']:
-                        repo_groups = repo_groups + m + ","
-                repo_field = "[" + display_name + ":/]"
-                for ff in repo_group_list:
-                    repo_field = repo_field + """
+            members = ','.join(groups[r])
+            repo_groups = repo_groups + members
+        repo_field = "[" + display_name + ":/]"
+        for ff in groups.keys():
+            repo_field = repo_field + """
 @""" + ff + " = rw"
-                repo_authz = """{groups}
-    
-    {field}"""
-                repo_auth = repo_authz.format(
-                    groups=repo_groups,
-                    field=repo_field
-                )
 
-                create_command = None
-                command5 = 'echo "{repo_authz}" >{svn_home}/{project_number}/authz'
-                comm5 = command5.format(
-                    project_number=project_number,
-                    svn_home=self.svn_home,
-                    repo_authz=repo_auth
-                )
-                create_command.append(comm5)
+        repo_authz = """{groups}
 
-                comm6 = "systemctl restart httpd.service"
-                create_command.append(comm6)
-                try:
-                    for c in create_command:
-                        self.client.exec_command(c)
-                except Exception as e:
-                    pass
+{field}"""
+        repo_auth = repo_authz.format(
+            groups=repo_groups,
+            field=repo_field
+        )
+        # print(repo_auth)
+
+        create_command = None
+        command5 = 'echo "{repo_authz}" >{svn_home}/{project_number}/{display_name}/authz'
+        comm5 = command5.format(
+            project_number=project_number,
+            svn_home=self.svn_home,
+            repo_authz=repo_auth,
+            display_name=display_name
+        )
+        create_command.append(comm5)
+
+        comm6 = "systemctl restart httpd.service"
+        create_command.append(comm6)
+        try:
+            for c in create_command:
+                self.client.exec_command(c)
+        except Exception as e:
+            pass
+
+    def get_auth(self, project_number, display_name):
+        c = 'cat {svn_home}/{project_number}/{display_name}/authz'
+        c = c.format(
+            svn_home=self.svn_home,
+            project_number=project_number,
+            display_name=display_name
+        )
+        stdin, stdout, stderr = self.client.exec_command(c)
+
+        result = stdout.read()
+        if not result:
+            print("this is not authz")
+            result = stderr.read()
+            print(result.decode())
+            return None
+        else:
+            if not os.path.exists('tmp'):
+                os.makedirs('tmp')
+            with open('tmp/1.ini', 'w') as f:
+
+                data = result.decode()
+                f.write(data)
+            config = ConfigParser()
+            config.read('tmp/1.ini', 'utf-8')
+            roles = config.options('groups')
+            value = {}
+            for r in roles:
+                members = config.get('groups', r)
+                members = members.split(',')
+                value[r] = members
+            print(value)
+            return value
+
+    def modify_ldap(self, project_number, display_name):
+        if self.get_auth(project_number=project_number,
+                         display_name=display_name) == get_members(project_number, display_name):
+            return True
+        else:
+            return False
