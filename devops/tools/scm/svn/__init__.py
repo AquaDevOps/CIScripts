@@ -13,6 +13,7 @@ class svn:
         self.client = ssh.SSHClient()
         self.client.set_missing_host_key_policy(ssh.AutoAddPolicy())
         self.client.connect(host, port=22, username='root', password=password)
+        self.url = "http://" + host
 
         self.svn_home = svn_home
         self.svn_repo_name = 'doc'
@@ -111,6 +112,7 @@ class svn:
                 self.client.exec_command(c)
         except Exception as e:
             pass
+        return self.url + '/' + project_number + '/' + project_name
         # self.add_authz(project_name, project_number, members)
 
     def add_authz(self, project_name, project_number, new_members):
@@ -154,6 +156,11 @@ class svn:
                     self.client.exec_command(c)
                 except Exception as e:
                     pass
+            return self.url + '/' + project_number + '/' + project_name
+        else:
+            print("ladp message is not same with conf message")
+            return "ladp message is not same with conf message"
+
 
     def get_auth(self, project_number, project_name):
         c = 'cat {svn_home}/{project_number}/{project_name}/authz'
