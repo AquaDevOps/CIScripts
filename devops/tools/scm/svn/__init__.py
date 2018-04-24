@@ -149,11 +149,11 @@ class svn:
 
             comm6 = "systemctl restart httpd.service"
             create_command.append(comm6)
-            try:
-                for c in create_command:
+            for c in create_command:
+                try:
                     self.client.exec_command(c)
-            except Exception as e:
-                pass
+                except Exception as e:
+                    pass
 
     def get_auth(self, project_number, project_name):
         c = 'cat {svn_home}/{project_number}/{project_name}/authz'
