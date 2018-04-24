@@ -2,7 +2,7 @@ from .helper import Helper
 
 
 class GroupHelper(Helper):
-    def list(self, full_path):
+    def collect(self, full_path):
         collection = self.pager('groups?search={keyword}'.format(keyword=full_path.split('/')[-1]))
         print('collected : {count}'.format(count=len(collection)))
         if collection:

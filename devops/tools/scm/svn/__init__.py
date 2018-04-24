@@ -11,8 +11,6 @@ class svn:
 
         self.template = template.catalog
 
-
-
     def create(self, owner, project_number, names, template, members=None):
         if members is None:
             members = []

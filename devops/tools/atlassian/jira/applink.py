@@ -52,12 +52,3 @@ class Applink:
         else:
             print(response.status_code)
             print(response.content)
-
-
-class Jira:
-    def __init__(self, url, username, password):
-        self.url = url
-        self.username = username
-        self.password = password
-        self.applink = Applink(self)
-        self.resturl = '{url}/rest'.format(url=url)

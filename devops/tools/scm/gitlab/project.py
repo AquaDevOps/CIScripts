@@ -31,7 +31,7 @@ class ProjectHelper(Helper):
             raise Exception
 
 
-    def list(self, path_with_namespace):
+    def collect(self, path_with_namespace):
         print(path_with_namespace)
         collection = self.pager('projects?search={keyword}'.format(keyword=path_with_namespace.split('/')[-1]))
         print('collected : {count}'.format(count=len(collection)))
