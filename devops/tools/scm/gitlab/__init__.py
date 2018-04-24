@@ -1,6 +1,7 @@
 from .project import ProjectHelper
 from .group import GroupHelper
 from .user import UserHelpder
+from .helper import ROLE_2_LEVEL, LEVEL_2_ROLE
 
 
 class Gitlab:
@@ -14,23 +15,57 @@ class Gitlab:
         self.group = GroupHelper(self)
         self.user = UserHelpder(self)
 
-    def create(self, owner, project_number, names=None, template=None, members=None):
-        if names is None:
-            names = []
-        if members is None:
-            members = []
+    def create(self, owner, project_number, template, project_name, members):
         self.group.create(path=project_number, name=None)
         groupid = self.group.collect(project_number)[0]['id']
 
         ownerid = self.user.collect(search={'username': owner})[0]['id']
         self.group.add_member(userid=ownerid, access_level=50, groupid=groupid)
-        for name in names:
-            self.project.create(owner=ownerid, name=name, groupid=groupid, path=name)
-            project = self.project.collect(project_number + '/' + name)[0]['id']
-            if len(members) > 0:
-                for member in members:
-                    member = self.user.collect(search={'username': member})[0]['id']
+
+        name = project_name
+        self.project.create(owner=ownerid, name=name, groupid=groupid, path=name)
+        project = self.project.collect(project_number+'/'+name)[0]['id']
+        for role in members.keys():
+            for member in members[role]:
+                member = self.user.collect(search={'username': member})[0]['id']
+                try:
+                    self.project.add_member(userid=member, access_level=ROLE_2_LEVEL[role], projectid=project)
+                except Exception as e:
+                    pass
+        self.add_authz(project_name, project_number, members)
+
+    def add_authz(self, project_name, project_number, members):
+
+        if self.auth_ldap(project_number, project_name):
+            name = project_name
+            project = self.project.list(project_number+'/'+name)[0]['id']
+            for r in members.keys():
+                for member in members[r]:
+                    member = self.user.list(search={'username': member})[0]['id']
                     try:
-                        self.project.add_member(userid=member, access_level=30, projectid=project)
+                        self.project.add_member(userid=member, access_level=ROLE_2_LEVEL[r], projectid=project)
                     except Exception as e:
                         pass
+        # add ldap
+
+    def get_auth(self, project_number, project_name):
+        name = project_name
+        project = self.project.list(project_number+'/'+name)[0]['id']
+        members = self.project.get_members(project)
+        field={}
+        for m in members:
+            level = m['access_level']
+            field[LEVEL_2_ROLE[level]]=[]
+        for m in members:
+            level = m['access_level']
+            field[LEVEL_2_ROLE[level]].append(m['username'])
+        return field
+
+    def auth_ldap(self, project_number, project_name):
+        if self.get_auth(project_number=project_number,
+                         project_name=project_name) == get_members(project_number, project_name):
+            return True
+        else:
+            return False
+
+

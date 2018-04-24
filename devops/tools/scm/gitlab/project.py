@@ -64,3 +64,14 @@ class ProjectHelper(Helper):
             print(response.status_code)
             print(response.content)
             raise Exception
+
+    def get_members(self, projectid):
+        response = self.request(method='get',path='projects/{id}/members'.format(id=projectid))
+        if 200 == response.status_code:
+            result = response.json()
+            # print('added {user} as {role}'.format(user=result['name'], role=LEVEL_2_ROLE['s']))
+            return result
+        else:
+            print(response.status_code)
+            print(response.content)
+            raise Exception
