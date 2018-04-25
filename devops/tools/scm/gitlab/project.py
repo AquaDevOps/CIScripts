@@ -44,8 +44,8 @@ class ProjectHelper(Helper):
         response = self.request(method='delete', path='projects/{id}/members/{uid}'.format(id=projectid, uid=userid),
                                 data={'user_id': userid})
 
-        if 201 == response.status_code:
-            return response.json()
+        if 204 == response.status_code:
+            return None
         else:
             print(response.status_code)
             print(response.content)
