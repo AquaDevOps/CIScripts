@@ -21,11 +21,15 @@ class Gitlab:
     def create(self, owner, project_number, template, project_name, members):
         from devops.scripts.modify_project import modify_project_number
         project_number = modify_project_number(project_number)
-        self.group.create(path=project_number, name=None)
+        try:
+            self.group.create(path=project_number, name=None)
+        except Exception as e:
+            print('pass')
         groupid = self.group.list(project_number)[0]['id']
 
         ownerid = self.user.list(search={'username': owner})[0]['id']
-        self.group.add_member(userid=ownerid, access_level=50, groupid=groupid)
+        # 将owner 以master 加入 group create 才不会报错
+        self.group.add_member(userid=ownerid, access_level=40, groupid=groupid)
         name = project_name
         self.project.create(owner=ownerid, name=name, groupid=groupid, path=name)
         project = self.project.list(project_number + '/' + name)[0]['id']
@@ -37,6 +41,7 @@ class Gitlab:
                 except Exception as e:
                     pass
         self.add_authz(project_name, project_number, members)
+        return project
 
     def add_authz(self, project_name, project_number, members):
         # ldap
@@ -107,10 +112,11 @@ class Gitlab:
         group = self.group.list(project_number)[0]['id']
         if role == 'owner':
             member = self.user.list(search={'username': member})[0]['id']
-            self.group.add_member(userid=member, access_level=ROLE_2_LEVEL[role], groupid=group)
+            result = self.group.add_member(userid=member, access_level=ROLE_2_LEVEL[role], groupid=group)
         else:
             member = self.user.list(search={'username': member})[0]['id']
-            self.project.add_member(userid=member, access_level=ROLE_2_LEVEL[role], projectid=project)
+            result = self.project.add_member(userid=member, access_level=ROLE_2_LEVEL[role], projectid=project)
+        return result
 
     def delete_member(self, project_number, project_name, role, member):
         project = self.project.list(project_number + '/' + project_name)[0]['id']
@@ -126,6 +132,7 @@ class Gitlab:
         # ldap
         from devops.tools.ldap.get_authz import modify_project
         modify_project(project_name=project_name, project_number=project_number, members=members)
+
         old = self.get_auth(project_number=project_number,
                             project_name=project_name)
         new = members
@@ -170,7 +177,7 @@ class Gitlab:
         print(message)
         self.get_difference(project_number, project_name, members)
 
-    # def modify_authz_ldap(self, project_name, project_number, members):
-    #     # ldap
-    #     from devops.tools.ldap.get_authz import modify_project
-    #     modify_project(project_name=project_name, project_number=project_number, members=members)
+    def modify_authz_ldap(self, project_name, project_number, members):
+        # ldap
+        from devops.tools.ldap.get_authz import modify_project
+        modify_project(project_name=project_name, project_number=project_number, members=members)
