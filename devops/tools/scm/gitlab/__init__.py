@@ -29,7 +29,7 @@ class Gitlab:
 
         ownerid = self.user.list(search={'username': owner})[0]['id']
         # 将owner 以master 加入 group create 才不会报错
-        self.group.add_member(userid=ownerid, access_level=40, groupid=groupid)
+        self.group.add_member(userid=ownerid, access_level=ROLE_2_LEVEL['master'], groupid=groupid)
         name = project_name
         self.project.create(owner=ownerid, name=name, groupid=groupid, path=name)
         project = self.project.list(project_number + '/' + name)[0]['id']
