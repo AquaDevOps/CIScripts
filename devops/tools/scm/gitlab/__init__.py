@@ -40,10 +40,10 @@ class Gitlab:
                     self.project.add_member(userid=member, access_level=ROLE_2_LEVEL[r], projectid=project)
                 except Exception as e:
                     pass
-        self.add_authz(project_name, project_number, members)
+        self.init_authz(project_name, project_number, members)
         return project
 
-    def add_authz(self, project_name, project_number, members):
+    def init_authz(self, project_name, project_number, members):
         # ldap
         from devops.tools.ldap.get_authz import add_project
         add_project(project_name=project_name, project_number=project_number, members=members)
@@ -67,9 +67,13 @@ class Gitlab:
         field = {}
         for m in members:
             level = m['access_level']
+            if level == 40:
+                level = 50
             field[LEVEL_2_ROLE[level]] = []
         for m in members:
             level = m['access_level']
+            if level == 40:
+                level = 50
             field[LEVEL_2_ROLE[level]].append(m['username'])
         # owner only in group
         # group = self.group.list(project_number)[0]['id']
@@ -103,30 +107,43 @@ class Gitlab:
                 return True
             else:
                 f.write('\n'+project_number+ ' : ' + project_name)
-                data = diff(old=conf_message, new=members)
+                data = diff(old=ldap_message, new=members)
                 f.write(data)
                 return False
 
     def add_member(self, project_number, project_name, role, member):
         project = self.project.list(project_number + '/' + project_name)[0]['id']
-        group = self.group.list(project_number)[0]['id']
+
         if role == 'owner':
-            member = self.user.list(search={'username': member})[0]['id']
-            result = self.group.add_member(userid=member, access_level=ROLE_2_LEVEL[role], groupid=group)
+            role = 'master'
         else:
-            member = self.user.list(search={'username': member})[0]['id']
-            result = self.project.add_member(userid=member, access_level=ROLE_2_LEVEL[role], projectid=project)
+            pass
+        member = self.user.list(search={'username': member})[0]['id']
+        result = self.project.add_member(userid=member, access_level=ROLE_2_LEVEL[role], projectid=project)
+        # group = self.group.list(project_number)[0]['id']
+        # if role == 'owner':
+        #     member = self.user.list(search={'username': member})[0]['id']
+        #     result = self.group.add_member(userid=member, access_level=ROLE_2_LEVEL[role], groupid=group)
+        # else:
+        #     member = self.user.list(search={'username': member})[0]['id']
+        #     result = self.project.add_member(userid=member, access_level=ROLE_2_LEVEL[role], projectid=project)
         return result
 
     def delete_member(self, project_number, project_name, role, member):
         project = self.project.list(project_number + '/' + project_name)[0]['id']
-        group = self.group.list(project_number)[0]['id']
         if role == 'owner':
-            member = self.user.list(search={'username': member})[0]['id']
-            self.group.delete_member(userid=member, groupid=group)
+            role = 'master'
         else:
-            member = self.user.list(search={'username': member})[0]['id']
-            self.project.delete_member(userid=member, projectid=project)
+            pass
+        member = self.user.list(search={'username': member})[0]['id']
+        self.project.delete_member(userid=member, projectid=project)
+        # group = self.group.list(project_number)[0]['id']
+        # if role == 'owner':
+        #     member = self.user.list(search={'username': member})[0]['id']
+        #     self.group.delete_member(userid=member, groupid=group)
+        # else:
+        #     member = self.user.list(search={'username': member})[0]['id']
+        #     self.project.delete_member(userid=member, projectid=project)
 
     def modify_authz(self, project_name, project_number, members):
         # ldap
@@ -179,5 +196,10 @@ class Gitlab:
 
     def modify_authz_ldap(self, project_name, project_number, members):
         # ldap
+        from devops.tools.ldap.get_authz import modify_project
+        modify_project(project_name=project_name, project_number=project_number, members=members)
+
+    def sync_authz_ldap(self, project_name, project_number):
+        members = self.get_auth(project_name=project_name, project_number=project_number)
         from devops.tools.ldap.get_authz import modify_project
         modify_project(project_name=project_name, project_number=project_number, members=members)
