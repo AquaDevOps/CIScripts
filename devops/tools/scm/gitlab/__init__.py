@@ -126,8 +126,10 @@ class Gitlab:
         try:
             member = self.user.list(search={'username': member})[0]['id']
             result = self.project.add_member(userid=member, access_level=ROLE_2_LEVEL[role], projectid=project)
+            return result
         except Exception as e:
             print(e)
+            return None
         # group = self.group.list(project_number)[0]['id']
         # if role == 'owner':
         #     member = self.user.list(search={'username': member})[0]['id']
@@ -135,7 +137,7 @@ class Gitlab:
         # else:
         #     member = self.user.list(search={'username': member})[0]['id']
         #     result = self.project.add_member(userid=member, access_level=ROLE_2_LEVEL[role], projectid=project)
-        return result
+        # return result
 
     def delete_member(self, project_number, project_name, role, member):
         project = self.project.list(project_number + '/' + project_name)[0]['id']
