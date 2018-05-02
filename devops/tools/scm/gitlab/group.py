@@ -30,8 +30,8 @@ class GroupHelper(Helper):
         response = self.request(method='delete', path='groups/{id}/members/{uid}'.format(id=groupid, uid=userid),
                                 data={'user_id': userid})
 
-        if 201 == response.status_code:
-            return response.json()
+        if 204 == response.status_code:
+            return None
         else:
             print(response.status_code)
             print(response.content)
@@ -49,6 +49,17 @@ class GroupHelper(Helper):
 
         if 201 == response.status_code:
             result = response.json()
+            return result
+        else:
+            print(response.status_code)
+            print(response.content)
+            raise Exception
+
+    def get_members(self, groupid):
+        response = self.request(method='get',path='groups/{id}/members'.format(id=groupid))
+        if 200 == response.status_code:
+            result = response.json()
+            # print('added {user} as {role}'.format(user=result['name'], role=LEVEL_2_ROLE['s']))
             return result
         else:
             print(response.status_code)
