@@ -4,7 +4,7 @@ from devops.tools.scm.gitlab.helper import (DEVELOPER, MASTER, OWNER)
 from devops.tools.scm import Subversion
 from devops.tools.ldap import LDAP
 
-class Project:
+class ProjectManager:
     def __init__(self, sn, name=None):
         self.sn = sn
         self.name = name
@@ -12,35 +12,32 @@ class Project:
         self.subversion = Subversion(
             config.subversion.url, config.subversion.username, config.subversion.password, config.subversion.workspace
         )
-        self._roles = None
+        self._ldap = None
 
     @property
-    def roles(self):
-        if self._roles is None:
-            self._roles = 'org'
-            ldap = LDAP()
-            ldap.bind()
-            collection = ldap.collect(
-                base='ou=workgroup,ou=group,ou=workspace,dc=gsafety,dc=com', include_root=False, flat=True
-            )
+    def ldap(self):
+        if self._ldap is None:
+            self._ldap = LDAP()
+            # projects = [collect for collect in collection if 'aqua-group' in collect['objectClass']]
+            # public_roles = [collect for collect in collection if 'aqua-role' in collect['objectClass']]
 
-            projects = [collect for collect in collection if 'aqua-group' in collect['objectClass']]
-            public_roles = [collect for collect in collection if 'aqua-role' in collect['objectClass']]
-
-
-
-            for collect in collection:
-                print(collect['objectClass'])
-                groups = []
-                if 'aqua-group' in collect['objectClass']:
-                    for child in collect['children']:
-                        print(child['objectClass'])
+        # ldap.bind()
+        # collection = ldap.collect(
+        #     base='ou=workgroup,ou=group,ou=workspace,dc=gsafety,dc=com', include_root=False, flat=True
+        # )
+        # ldap.unbind()
+        return self._ldap
 
 
+    def ldap_reload(self):
+        ldap = LDAP()
+        ldap.bind()
+        self._ldap = LDAP.collect(
+            base='ou=workgroup,ou=group,ou=workspace,dc=gsafety,dc=com', include_root=False, flat=True
+        )
+        ldap.unbind()
 
-            # print(collection)
 
-        return self._roles
 
     def git_group(self, owner, masters=[]):
         groupid = self.gitlab.group.create(self.sn, name=self.name)['id']
@@ -69,4 +66,4 @@ class Project:
         self.subversion.create(owner=owner, group=self.sn, project=path, members=members)
 
 
-ldap_roles = LDAP.collect(base='ou=workgroup,ou=group,ou=workspace,dc=gsafety,dc=com', include_root=False, flat=True)
+

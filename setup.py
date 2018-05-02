@@ -14,4 +14,15 @@ setup(
     url='https://github.com/popingalex',
     author='popingalex',
     author_email='zhe009@hotmail.com',
+    install_requires=[
+        'ConfigParser >= 3.5.0',
+        'PyMySQL >= 0.8.0',
+        'pymssql >= 2.1.3',
+        'ldap3 >= 2.4',
+        'PyYAML >= 3.12',
+        'pika >= 0.11.2',
+        'requests >= 2.18.4',
+        'selenium >= 3.11.0',
+        'paramiko >= 2.4.1',
+    ]
 )
