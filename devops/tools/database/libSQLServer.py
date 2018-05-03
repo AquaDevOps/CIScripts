@@ -2,15 +2,14 @@ import pymssql
 
 
 class Connect:
-    def __init__(self, host, user, password, database, charset='utf8', port=1433, as_dict=True):
+    def __init__(self, connection_info):
         self.connection_info = {
-            'host': host,
-            'user': user,
-            'password': password,
-            'database': database,
-            'charset': charset,
-            'port': port,
-            'as_dict': as_dict,
+            'host': connection_info.url,
+            'user': connection_info.username,
+            'password': connection_info.password,
+            'charset': 'utf8',
+            'port': int(connection_info.port),
+            'as_dict': True,
         }
 
     def connection(self):
