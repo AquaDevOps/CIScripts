@@ -21,19 +21,19 @@ class Gitlab:
 
     def create(self, owner, project_number, template, project_name, members):
         self.group.create(path=project_number, name=None)
-        groupid = self.group.collect(project_number)[0]['id']
+        # groupid = self.group.collect(project_number)[0]['id']
         from devops.scripts.modify_project import modify_project_number
         project_number = modify_project_number(project_number)
         try:
             self.group.create(path=project_number, name=None)
         except Exception as e:
             print('pass')
-        groupid = self.group.list(project_number)[0]['id']
+        groupid = self.group.collect(project_number)[0]['id']
 
         ownerid = self.user.collect(search={'username': owner})[0]['id']
         self.group.add_member(userid=ownerid, access_level=50, groupid=groupid)
 
-        ownerid = self.user.list(search={'username': owner})[0]['id']
+        ownerid = self.user.collect(search={'username': owner})[0]['id']
         # 将owner 以master 加入 group create 才不会报错
 
         try:
@@ -43,16 +43,16 @@ class Gitlab:
 
         name = project_name
         self.project.create(owner=ownerid, name=name, groupid=groupid, path=name)
-        project = self.project.collect(project_number+'/'+name)[0]['id']
-        for role in members.keys():
-            for member in members[role]:
-                member = self.user.collect(search={'username': member})[0]['id']
-        project = self.project.list(project_number + '/' + name)[0]['id']
+        # project = self.project.collect(project_number+'/'+name)[0]['id']
+        # for role in members.keys():
+        #     for member in members[role]:
+        #         member = self.user.collect(search={'username': member})[0]['id']
+        project = self.project.collect(project_number + '/' + name)[0]['id']
         for r in members.keys():
             for member in members[r]:
-                member = self.user.list(search={'username': member})[0]['id']
+                member = self.user.collect(search={'username': member})[0]['id']
                 try:
-                    self.project.add_member(userid=member, access_level=ROLE_2_LEVEL[role], projectid=project)
+                    self.project.add_member(userid=member, access_level=ROLE_2_LEVEL[r], projectid=project)
                 except Exception as e:
                     pass
         self.init_authz(project_name, project_number, members)
@@ -74,7 +74,7 @@ class Gitlab:
 
     def get_auth(self, project_number, project_name):
         name = project_name
-        project = self.project.list(project_number + '/' + name)[0]['id']
+        project = self.project.collect(project_number + '/' + name)[0]['id']
 
         print(project)
 
@@ -127,14 +127,14 @@ class Gitlab:
                 return False
 
     def add_member(self, project_number, project_name, role, member):
-        project = self.project.list(project_number + '/' + project_name)[0]['id']
+        project = self.project.collect(project_number + '/' + project_name)[0]['id']
 
         if role == 'owner':
             role = 'master'
         else:
             pass
         try:
-            member = self.user.list(search={'username': member})[0]['id']
+            member = self.user.collect(search={'username': member})[0]['id']
             result = self.project.add_member(userid=member, access_level=ROLE_2_LEVEL[role], projectid=project)
             return result
         except Exception as e:
@@ -150,13 +150,13 @@ class Gitlab:
         # return result
 
     def delete_member(self, project_number, project_name, role, member):
-        project = self.project.list(project_number + '/' + project_name)[0]['id']
+        project = self.project.collect(project_number + '/' + project_name)[0]['id']
         if role == 'owner':
             role = 'master'
         else:
             pass
         try:
-            member = self.user.list(search={'username': member})[0]['id']
+            member = self.user.collect(search={'username': member})[0]['id']
             self.project.delete_member(userid=member, projectid=project)
         except Exception as e:
             print(e)
