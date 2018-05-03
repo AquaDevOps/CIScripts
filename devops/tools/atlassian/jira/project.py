@@ -1,20 +1,7 @@
-from .helper import Helper
-import json
+from .helper import (Helper, ROLE_TYPE, PROJECT_TYPE)
+
 
 class ProjectHelper(Helper):
-
-    PROJECT_TYPE = {
-        '项目管理': ['business', 'com.atlassian.jira-core-project-templates:jira-core-project-management'],
-        '任务管理': ['business', 'com.atlassian.jira-core-project-templates:jira-core-task-management'],
-        '流程管理': ['business', 'com.atlassian.jira-core-project-templates:jira-core-process-management'],
-        'Basic': ['service desk', 'com.atlassian.servicedesk:classic-service-desk-project'],
-        'IT Service Desk': ['service desk', 'com.atlassian.servicedesk:itil-service-desk-project'],
-        'Customer service': ['service desk', ''],
-        'Scrum开发方法': ['software', 'com.pyxis.greenhopper.jira:gh-scrum-template'],
-        'Kanban开发方法': ['software', 'com.pyxis.greenhopper.jira:gh-kanban-template'],
-        '基本开发方法': ['software', 'com.pyxis.greenhopper.jira:basic-software-development-template'],
-    }
-
 
     def category(self, name):
         print(name)
@@ -34,8 +21,8 @@ class ProjectHelper(Helper):
         project_data={
             "key": key,
             "name": name,
-            "projectTypeKey": self.PROJECT_TYPE[project_type][0],
-            "projectTemplateKey": self.PROJECT_TYPE[project_type][1],
+            "projectTypeKey": PROJECT_TYPE[project_type][0],
+            "projectTemplateKey": PROJECT_TYPE[project_type][1],
             "description": description,
             "lead": owner,
             # "url": value['url'],
@@ -82,7 +69,7 @@ class ProjectHelper(Helper):
 
     def add_members(self, key, roleName, members=[]):
         roles_list = self.roles(key=key)
-        role = list(filter(lambda x: roleName == x['name'], roles_list))
+        role = list(filter(lambda x: ROLE_TYPE[roleName] == x['name'], roles_list))
         roleId = role[0]['id'] if role else ''
         if roleId:
             data = {
@@ -102,7 +89,7 @@ class ProjectHelper(Helper):
 
     def delete_member(self, key, roleName, member):
         roles_list = self.roles(key=key)
-        role = list(filter(lambda x: roleName == x['name'], roles_list))
+        role = list(filter(lambda x: ROLE_TYPE[roleName] == x['name'], roles_list))
         roleId = role[0]['id'] if role else ''
         if roleId:
             response = self.request(

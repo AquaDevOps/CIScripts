@@ -1,6 +1,25 @@
 import requests
 import json
 
+ROLE_TYPE = {
+    'guest': 'User',
+    'reporter': 'QA',
+    'developer': 'Developers',
+    'master': 'Manager',
+    'owner': 'Tempo Project Managers'
+}
+
+PROJECT_TYPE = {
+    '项目管理': ['business', 'com.atlassian.jira-core-project-templates:jira-core-project-management'],
+    '任务管理': ['business', 'com.atlassian.jira-core-project-templates:jira-core-task-management'],
+    '流程管理': ['business', 'com.atlassian.jira-core-project-templates:jira-core-process-management'],
+    'Basic': ['service desk', 'com.atlassian.servicedesk:classic-service-desk-project'],
+    'IT Service Desk': ['service desk', 'com.atlassian.servicedesk:itil-service-desk-project'],
+    # 'Customer service': ['service desk', ''],
+    'Scrum开发方法': ['software', 'com.pyxis.greenhopper.jira:gh-scrum-template'],
+    'Kanban开发方法': ['software', 'com.pyxis.greenhopper.jira:gh-kanban-template'],
+    '基本开发方法': ['software', 'com.pyxis.greenhopper.jira:basic-software-development-template'],
+}
 
 class Helper:
     PAGESIZE = 16
